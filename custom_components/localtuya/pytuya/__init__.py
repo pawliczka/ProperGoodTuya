@@ -220,14 +220,26 @@ payload_dict = {
             "command_override": CONTROL_NEW,  # Uses CONTROL_NEW command
             "command": {"protocol": 5, "t": "int", "data": ""},
         },
-        DP_QUERY: {"command_override": DP_QUERY_NEW},
+        DP_QUERY: {
+            "command_override": DP_QUERY_NEW,
+            "command": {},
+        },
+        DP_QUERY_NEW: {
+            "command": {},
+        },
     },
     "v3.5": {
         CONTROL: {
             "command_override": CONTROL_NEW,
             "command": {"protocol": 5, "t": "int", "data": ""},
         },
-        DP_QUERY: {"command_override": DP_QUERY_NEW},
+        DP_QUERY: {
+            "command_override": DP_QUERY_NEW,
+            "command": {},
+        },
+        DP_QUERY_NEW: {
+            "command": {},
+        },
     },
 }
 
@@ -996,7 +1008,7 @@ class TuyaProtocol(asyncio.Protocol, ContextualLogger):
         # in the ranges [1-25] and [100-110] need to split the bruteforcing in
         # different steps due to request payload limitation (max. length = 255)
         self.dps_cache = {}
-        ranges = [(2, 11), (11, 21), (21, 31), (100, 111)]
+        ranges = [(2, 11), (11, 21), (21, 31), (50, 61), (61, 71), (100, 111), (111, 121), (121, 131), (131, 141)]
 
         for dps_range in ranges:
             # dps 1 must always be sent, otherwise it might fail in case no dps is found
