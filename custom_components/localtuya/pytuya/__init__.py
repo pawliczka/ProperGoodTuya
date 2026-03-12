@@ -490,7 +490,7 @@ def pack_message_6699(msg, key):
         0,
         msg.seqno,
         msg.cmd,
-        12 + len(msg.payload) + 16 + 4,
+        12 + len(msg.payload) + 16,
     )
     aad = header[4:]
     gcm = GCMCipher(key)
@@ -503,12 +503,14 @@ def unpack_message_6699(data, key, header=None, logger=None):
     header_len = struct.calcsize(MESSAGE_HEADER_FMT_6699)
     if header is None:
         header = parse_header_6699(data)
-    if len(data) < header_len + header.length:
+    # header.length covers iv(12) + ciphertext + tag(16), suffix(4) is separate
+    total_len = header_len + header.length + 4
+    if len(data) < total_len:
         if logger:
             logger.debug("6699 unpack: not enough data to unpack payload")
         raise DecodeError("Not enough data to unpack 6699 payload")
     iv = data[header_len : header_len + 12]
-    payload_end = header_len + header.length - 4
+    payload_end = header_len + header.length
     tag = data[payload_end - 16 : payload_end]
     encrypted = data[header_len + 12 : payload_end - 16]
     suffix = struct.unpack(">I", data[payload_end : payload_end + 4])[0]
@@ -596,12 +598,13 @@ class MessageDispatcher(ContextualLogger):
                     self.debug("6699 header parse error, discarding buffer")
                     self.buffer = b""
                     break
-                if len(self.buffer) < header_len + header.length:
+                total_len = header_len + header.length + 4  # +4 for suffix
+                if len(self.buffer) < total_len:
                     break
                 msg = unpack_message_6699(
                     self.buffer, self.local_key, header=header, logger=self
                 )
-                self.buffer = self.buffer[header_len + header.length :]
+                self.buffer = self.buffer[total_len:]
                 self._dispatch(msg)
             elif prefix == PREFIX_VALUE:
                 header_len = struct.calcsize(MESSAGE_RECV_HEADER_FMT)
