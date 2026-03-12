@@ -527,7 +527,12 @@ def unpack_message_6699(data, key, header=None, logger=None):
             logger.debug("6699 GCM decryption/authentication failed")
         decrypted = b""
         crc_good = False
-    return TuyaMessage(header.seqno, header.cmd, 0, decrypted, tag, crc_good)
+    # Device prepends a 4-byte retcode to the payload; strip it
+    retcode = 0
+    if len(decrypted) >= 4:
+        retcode = struct.unpack(">I", decrypted[:4])[0]
+        decrypted = decrypted[4:]
+    return TuyaMessage(header.seqno, header.cmd, retcode, decrypted, tag, crc_good)
 
 
 class MessageDispatcher(ContextualLogger):
